@@ -1,31 +1,62 @@
-use std::{thread, time::Duration};
+use console_engine::{ConsoleEngine, KeyCode, pixel};
 
-use console_engine::Color;
-use console_engine::screen::Screen;
-use console_engine::pixel::{self, Pixel};
+const SNOW_FLAKE_SYMB: char = '❄';
+const NUMBER_OF_SNOWFLAKES: u8 = 5;
+const FALLING_SPEED: u8 = 1;
 
-const SNOW_FLAKE: char = '❄';
+/// custom function for generating a random u32 bound into [0;max]
+fn random(max: u32) -> u32 {
+    rand::random::<u32>() % max
+}
 
 struct Point {
-    pub x: i32,
-    pub y: i32
+    pub x: u32,
+    pub y: u32
+}
+
+struct SnowField {
+    snowflakes: Vec<Point>,
+    falling_speed: u8,
+    _terminal_width: u32,
+    _terminal_height: u32
+}
+
+impl SnowField {
+    fn init(height: u32, width: u32) -> SnowField {
+        let snowflakes: Vec<Point> = (0..NUMBER_OF_SNOWFLAKES).into_iter()
+        .map(|_| Point{x: random(width), y: 0 as u32}).collect();
+        SnowField { snowflakes: (snowflakes), falling_speed: (FALLING_SPEED), _terminal_height: height, _terminal_width: (width) }
+    }
+
+    fn draw(&mut self, engine: &mut ConsoleEngine) -> () {
+        self.snowflakes.iter_mut().for_each(|snow_flake| {
+            snow_flake.y += self.falling_speed as u32;
+            if snow_flake.y >= self._terminal_height {
+                snow_flake.y = 0;
+            }
+            engine.set_pxl(snow_flake.x as i32, snow_flake.y as i32, pixel::pxl(SNOW_FLAKE_SYMB));
+        });        
+    }
+
+    
 }
 
 fn main() {
-    // create a screen of 20x11 characters
-    let mut scr = Screen::new(20,11);
-    let mut snow_flakes = vec![Point{x: 3, y: 0}, Point{x: 6, y: 0}];
+    // initializes a screen filling the terminal of at least 10x10 of size with a target of 4 frame per second
+    let mut engine = ConsoleEngine::init_fill_require(10, 10, 30).expect("Terminal screen is too small");
+    let mut snowfield = SnowField::init(engine.get_height(), engine.get_width());
     loop {
+        engine.wait_frame(); // wait for next frame + capture inputs
+                             // engine.check_resize(); here we do not want to resize the terminal because it could break the boundaries of the game
 
-        scr.clear();
-        scr.rect(0,0, 19,10,pixel::pxl('#'));
-        for snow_flake in snow_flakes.iter_mut() {            
-            snow_flake.y = (snow_flake.y + 1) % 11;
-            scr.set_pxl(snow_flake.x, snow_flake.y, Pixel { bg: Color::Reset,
-                fg: Color::White, chr: SNOW_FLAKE });
+        // exit check
+        if engine.is_key_pressed(KeyCode::Char('q')) {
+            break;
         }
-        thread::sleep(Duration::from_secs(2));
-        scr.draw();        
+        engine.clear_screen(); // reset the screen
 
-    }    
+
+        snowfield.draw(&mut engine);
+        engine.draw();
+    }
 } 
