@@ -9,6 +9,7 @@ const SNOWFLAKE_COLORS: &'static [Color] = &[
     Color::DarkBlue,
     Color::DarkCyan,
     Color::White,
+    Color::Grey
 ];
 const SNOWFLAKE_COLOR_VARIANTS: u32 = SNOWFLAKE_COLORS.len() as u32;
 const SCREEN_SPACE_AMOUNT: u32 = 50;
