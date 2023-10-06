@@ -13,17 +13,17 @@ struct Point<'a> {
     pub y: u32,
     pub speed_x: i32,
     pub speed_y: u32,
-    pub symb: &'a char
+    pub symb: &'a char,
 }
 
-impl <'a> Point<'a> {
+impl<'a> Point<'a> {
     fn new(x: i32, y: u32) -> Self {
         Point {
             x,
             y,
             speed_x: 1,
             speed_y: random(2),
-            symb: SNOW_FLAKE_SYMB.get(random(3) as usize).unwrap()
+            symb: SNOW_FLAKE_SYMB.get(random(3) as usize).unwrap(),
         }
     }
 }
@@ -36,7 +36,7 @@ struct SnowField<'a> {
     max_snowflakes: u32,
 }
 
-impl <'a> SnowField<'a> {
+impl<'a> SnowField<'a> {
     fn init(height: u32, width: u32) -> SnowField<'a> {
         let snowflakes_num = height * width / SCREEN_SPACE_AMOUNT;
         SnowField {
