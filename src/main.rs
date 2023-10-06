@@ -1,6 +1,6 @@
 use console_engine::{pixel, ConsoleEngine, KeyCode};
 
-const SNOW_FLAKE_SYMB: char = '❄';
+const SNOW_FLAKE_SYMB: [&'static char; 3] = [&'❄', &'❅', &'❆'];
 const SCREEN_SPACE_AMOUNT: u32 = 50;
 
 /// custom function for generating a random u32 bound into [0;max]
@@ -8,34 +8,36 @@ fn random(max: u32) -> u32 {
     rand::random::<u32>() % max
 }
 
-struct Point {
+struct Point<'a> {
     pub x: i32,
     pub y: u32,
     pub speed_x: i32,
     pub speed_y: u32,
+    pub symb: &'a char
 }
 
-impl Point {
+impl <'a> Point<'a> {
     fn new(x: i32, y: u32) -> Self {
         Point {
             x,
             y,
             speed_x: 1,
             speed_y: random(2),
+            symb: SNOW_FLAKE_SYMB.get(random(3) as usize).unwrap()
         }
     }
 }
 
-struct SnowField {
-    snowflakes: Vec<Option<Point>>,
+struct SnowField<'a> {
+    snowflakes: Vec<Option<Point<'a>>>,
     w_bound: u32,
     h_bound: u32,
     snowflakes_num: u32,
     max_snowflakes: u32,
 }
 
-impl SnowField {
-    fn init(height: u32, width: u32) -> SnowField {
+impl <'a> SnowField<'a> {
+    fn init(height: u32, width: u32) -> SnowField<'a> {
         let snowflakes_num = height * width / SCREEN_SPACE_AMOUNT;
         SnowField {
             snowflakes: ((0..snowflakes_num).map(|_| None).collect()),
@@ -51,7 +53,7 @@ impl SnowField {
             engine.set_pxl(
                 snowflake.x as i32,
                 snowflake.y as i32,
-                pixel::pxl(SNOW_FLAKE_SYMB),
+                pixel::pxl(*snowflake.symb),
             );
         });
     }
@@ -77,7 +79,7 @@ impl SnowField {
             }
         }
         // populate with some
-        let mut new_snowflakes_num = random(self.w_bound / 100 * 10);
+        let mut new_snowflakes_num = random(self.w_bound / 100 * 5);
         if self
             .max_snowflakes
             .checked_sub(self.snowflakes_num + new_snowflakes_num)
