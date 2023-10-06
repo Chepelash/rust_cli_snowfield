@@ -1,6 +1,15 @@
-use console_engine::{pixel, ConsoleEngine, KeyCode};
+use console_engine::{pixel, Color, ConsoleEngine, KeyCode};
 
-const SNOW_FLAKE_SYMB: [&'static char; 3] = [&'❄', &'❅', &'❆'];
+const SNOWFLAKE_SYMB: &'static [char] = &['❄', '❅', '❆'];
+const SNOWFLAKE_SYMB_VARIANTS: u32 = SNOWFLAKE_SYMB.len() as u32;
+const SNOWFLAKE_COLORS: &'static [Color] = &[
+    Color::Blue,
+    Color::Cyan,
+    Color::DarkBlue,
+    Color::DarkCyan,
+    Color::White,
+];
+const SNOWFLAKE_COLOR_VARIANTS: u32 = SNOWFLAKE_COLORS.len() as u32;
 const SCREEN_SPACE_AMOUNT: u32 = 50;
 
 /// custom function for generating a random u32 bound into [0;max]
@@ -8,36 +17,38 @@ fn random(max: u32) -> u32 {
     rand::random::<u32>() % max
 }
 
-struct Point<'a> {
+struct Point {
     pub x: i32,
     pub y: u32,
     pub speed_x: i32,
     pub speed_y: u32,
-    pub symb: &'a char,
+    pub symb: char,
+    pub color: Color,
 }
 
-impl<'a> Point<'a> {
+impl Point {
     fn new(x: i32, y: u32) -> Self {
         Point {
             x,
             y,
             speed_x: 1,
             speed_y: random(2),
-            symb: SNOW_FLAKE_SYMB.get(random(3) as usize).unwrap(),
+            symb: SNOWFLAKE_SYMB[random(SNOWFLAKE_SYMB_VARIANTS) as usize],
+            color: SNOWFLAKE_COLORS[random(SNOWFLAKE_COLOR_VARIANTS) as usize],
         }
     }
 }
 
-struct SnowField<'a> {
-    snowflakes: Vec<Option<Point<'a>>>,
+struct SnowField {
+    snowflakes: Vec<Option<Point>>,
     w_bound: u32,
     h_bound: u32,
     snowflakes_num: u32,
     max_snowflakes: u32,
 }
 
-impl<'a> SnowField<'a> {
-    fn init(height: u32, width: u32) -> SnowField<'a> {
+impl SnowField {
+    fn init(height: u32, width: u32) -> SnowField {
         let snowflakes_num = height * width / SCREEN_SPACE_AMOUNT;
         SnowField {
             snowflakes: ((0..snowflakes_num).map(|_| None).collect()),
@@ -53,7 +64,7 @@ impl<'a> SnowField<'a> {
             engine.set_pxl(
                 snowflake.x as i32,
                 snowflake.y as i32,
-                pixel::pxl(*snowflake.symb),
+                pixel::pxl_fbg(snowflake.symb, snowflake.color, Color::Black),
             );
         });
     }
@@ -99,9 +110,9 @@ impl<'a> SnowField<'a> {
 }
 
 fn main() {
-    // initializes a screen filling the terminal of at least 10x10 of size with a target of 4 frame per second
+    // initializes a screen filling the terminal of at least 10x10 of size with a target frames per second
     let mut engine =
-        ConsoleEngine::init_fill_require(10, 10, 5).expect("Terminal screen is too small");
+        ConsoleEngine::init_fill_require(10, 10, 3).expect("Terminal screen is too small");
     let mut snowfield = SnowField::init(engine.get_height(), engine.get_width());
     loop {
         engine.wait_frame(); // wait for next frame + capture inputs
@@ -112,6 +123,7 @@ fn main() {
             break;
         }
         engine.clear_screen(); // reset the screen
+        engine.fill(pixel::pxl_fbg(' ', Color::Black, Color::Black));
 
         snowfield.update();
         snowfield.draw(&mut engine);
